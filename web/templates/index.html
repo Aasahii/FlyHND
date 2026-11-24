@@ -9,10 +9,8 @@
 </head>
 <body>
 
-<!-- Backdrop overlay for modal spotlight effect -->
 <div id="modalBackdrop" class="modal-backdrop" style="display:none;"></div>
 
-<!-- ───────────── HEADER ───────────── -->
 <header class="site-header">
   <div class="header-inner">
     <div class="brand">
@@ -30,7 +28,6 @@
 
 <main>
 
-  <!-- ───────────── SEARCH CARD ───────────── -->
   <section class="search-section">
     <h1 class="search-title">Find flights anywhere in the world</h1>
     <p class="search-sub">Enter cities, airports, or countries &mdash; we&rsquo;ll look them up.</p>
@@ -44,7 +41,6 @@
 
     <form id="searchForm" class="search-card" novalidate>
 
-      <!-- Trip type toggle -->
       <div class="trip-toggle">
         <label class="radio-label">
           <input type="radio" name="tripType" value="one_way" checked /> One way
@@ -54,10 +50,8 @@
         </label>
       </div>
 
-      <!-- Row 1: Inputs (From / Swap / To / Dates / Pax / Currency) -->
       <div class="form-row">
 
-        <!-- From -->
         <div class="field-group field-group--grow">
           <label for="originInput">From</label>
           <div class="autocomplete-wrapper">
@@ -68,10 +62,8 @@
           </div>
         </div>
 
-        <!-- Swap -->
         <button type="button" id="swapBtn" class="swap-btn" title="Swap" aria-label="Swap">&#8646;</button>
 
-        <!-- To -->
         <div class="field-group field-group--grow">
           <label for="destInput">To</label>
           <div class="autocomplete-wrapper">
@@ -82,25 +74,21 @@
           </div>
         </div>
 
-        <!-- Depart date -->
         <div class="field-group">
           <label for="dateInput">Depart</label>
           <input id="dateInput" type="date" class="field-input" required />
         </div>
 
-        <!-- Return date (shown only when return selected) -->
         <div class="field-group" id="returnDateGroup" style="display:none">
           <label for="returnDateInput">Return</label>
           <input id="returnDateInput" type="date" class="field-input" />
         </div>
 
-        <!-- Passengers -->
         <div class="field-group field-group--narrow">
           <label for="passengersInput">Pax</label>
           <input id="passengersInput" type="number" class="field-input" min="1" max="9" value="1" />
         </div>
 
-        <!-- Currency -->
         <div class="field-group field-group--narrow">
           <label for="currencyInput">Currency</label>
           <select id="currencyInput" class="field-input">
@@ -114,9 +102,8 @@
           </select>
         </div>
 
-      </div><!-- /form-row -->
+      </div>
 
-      <!-- Action Row: Search button pushed to the right side -->
       <div class="search-action-row">
         <button type="submit" id="searchBtn" class="btn-primary search-btn-lg">
           <span id="searchBtnText">Search Flights</span>
@@ -127,16 +114,12 @@
     </form>
   </section>
 
-  <!-- ───────────── ERROR ───────────── -->
   <div id="errorBanner" class="banner banner-error" hidden></div>
 
-  <!-- ───────────── RESULTS ───────────── -->
   <section id="resultsSection" class="results-section" hidden>
 
-    <!-- Demo notice -->
     <div id="demoBanner" class="banner banner-info" hidden></div>
 
-    <!-- Outbound results -->
     <div id="outboundBlock">
       <div class="results-header">
         <div>
@@ -155,7 +138,6 @@
       </div>
     </div>
 
-    <!-- Return results (shown only for round trips) -->
     <div id="returnBlock" hidden>
       <div class="results-divider">
         <span>Return Flight</span>
@@ -181,14 +163,12 @@
 
 </main>
 
-<!-- ───────────── FOOTER ───────────── -->
 <footer class="site-footer">
   <p>FlyHND &middot; Global Flight Search &amp; Price Comparison &middot;
   Fares from live providers where configured; demo data otherwise &middot;
   Booking &amp; payment: planned for FlyHND 4.0</p>
 </footer>
 
-<!-- Card template -->
 <template id="flightCardTemplate">
   <article class="flight-card">
     <div class="card-badges"></div>
@@ -228,7 +208,6 @@
       <span class="expand-hint">Click for details &#9662;</span>
     </div>
 
-    <!-- Collapsible Flight Itinerary & Layover Details -->
     <div class="card-details" style="display:none;">
       <div class="details-divider">Flight Itinerary &amp; Route Stops</div>
       <div class="segments-container"></div>
