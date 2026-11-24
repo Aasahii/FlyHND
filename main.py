@@ -1,15 +1,3 @@
-"""
-FlyHND — Command-line entry point
-----------------------------------
-Primary interface: run_web.py  (opens the website)
-This file keeps a minimal offline demo mode for quick testing.
-
-Usage:
-  python run_web.py          ← start the website (recommended)
-  python main.py --demo      ← offline CLI demo (Pune→Singapore benchmark)
-  python main.py --live      ← live CLI search (requires .env credentials)
-"""
-
 import argparse
 import os
 import sys
@@ -105,7 +93,7 @@ def main():
         run_search(args.origin, args.destination, date, args.budget, "live", args.passengers, args.currency)
         return
 
-    if args.demo or True:   # default action if no flags given
+    if args.demo or True:   
         print("\n  Running offline demo (Pune → Singapore benchmark).")
         print("  For the web interface, run:  python run_web.py\n")
         run_search("PNQ", "SIN", date or "2027-01-15", 30000, "offline")

@@ -1,8 +1,4 @@
-## FlyHND 3.0 — Python Dependencies
-
-# Core search pipeline
 python-dotenv>=1.0.0
 amadeus>=9.0.0
 
-# Web interface
 flask>=3.0.0

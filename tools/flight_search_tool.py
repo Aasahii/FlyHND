@@ -220,7 +220,6 @@ class FlightSearchTool:
                     seg_m = seg_dur_min % 60
                     seg_dur_str = f"{seg_h}h {seg_m}m" if seg_dur_min > 0 else ""
 
-                    # Layover after this segment (if not last)
                     layover_info = None
                     if seg_idx < len(flights) - 1:
                         raw_layovers = group.get("layovers", [])

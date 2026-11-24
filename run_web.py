@@ -1,13 +1,3 @@
-"""
-FlyHND 3.0 — Web Server Launcher
-=================================
-Run this to start the website:
-
-    python run_web.py
-
-Your browser will open automatically at http://localhost:5000
-"""
-
 import os
 import sys
 import argparse
@@ -52,7 +42,6 @@ def main():
     print("  Press Ctrl+C to stop the server.")
     print()
 
-    # Open browser after a short delay to let Flask bind the port first
     if not args.no_browser and not args.debug:
         def _open():
             time.sleep(1.2)

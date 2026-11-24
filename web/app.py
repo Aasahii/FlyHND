@@ -1,19 +1,9 @@
-"""
-FlyHND 3.0 — Flask Web Application
-Provides a usable web interface for global flight search and price comparison.
-Connects directly to the agent search pipeline (agents/, tools/, models/).
-Email is fully removed — results display in the browser.
-"""
-
 import os
 import sys
 import json
 from decimal import Decimal, InvalidOperation
 from datetime import datetime
 
-# ---------------------------------------------------------------------------
-# Path bootstrap
-# ---------------------------------------------------------------------------
 _project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
@@ -30,9 +20,6 @@ from models.memory_models import SearchRequest
 from agents.orchestrator import RequestCoordinator
 from tools.flight_search_tool import FlightSearchTool
 
-# ---------------------------------------------------------------------------
-# App setup
-# ---------------------------------------------------------------------------
 _template_dir = os.path.join(os.path.dirname(__file__), "templates")
 _static_dir   = os.path.join(os.path.dirname(__file__), "static")
 
@@ -65,7 +52,6 @@ def _resolve_to_provider_id(tool: FlightSearchTool, user_input: str) -> str:
     if not cleaned:
         return ""
 
-    # Already an IATA code (3 letters) or a kgmid (/m/...)
     if (len(cleaned) == 3 and cleaned.isalpha()) or cleaned.startswith("/m/"):
         return cleaned
 
@@ -73,7 +59,6 @@ def _resolve_to_provider_id(tool: FlightSearchTool, user_input: str) -> str:
         suggs = tool.suggest_locations(cleaned)
         if suggs:
             top = suggs[0]
-            # If top match is an airport or has an associated airport IATA, prefer that
             airports = top.get("airports", [])
             if airports and airports[0].get("id"):
                 return airports[0]["id"]
@@ -85,9 +70,6 @@ def _resolve_to_provider_id(tool: FlightSearchTool, user_input: str) -> str:
     return cleaned
 
 
-# ---------------------------------------------------------------------------
-# Routes
-# ---------------------------------------------------------------------------
 
 @app.route("/")
 def index():
@@ -133,7 +115,6 @@ def api_suggest():
             if airports and airports[0].get("id"):
                 iata_code = airports[0]["id"]
 
-            # Main place entry
             display_label = name
             if iata_code and f"({iata_code})" not in display_label:
                 display_label = f"{name} ({iata_code})"
@@ -148,7 +129,6 @@ def api_suggest():
                     "type": item_type or "city"
                 })
 
-            # Also show individual airports for domestic/international precision
             for ap in airports:
                 ap_name = ap.get("name")
                 ap_id = ap.get("id")
@@ -198,7 +178,6 @@ def api_search():
     currency     = (body.get("currency")     or "INR").strip().upper()
     budget_raw   = body.get("budget")
 
-    # ── Validation ──────────────────────────────────────────────────────
     errors = []
     if not origin_raw:
         errors.append("Origin is required.")
@@ -228,7 +207,6 @@ def api_search():
     if errors:
         return jsonify({"ok": False, "errors": errors}), 400
 
-    # ── Auto-resolve raw place names to valid Provider IDs ──────────────
     search_tool = FlightSearchTool()
     origin_id = _resolve_to_provider_id(search_tool, origin_raw)
     dest_id   = _resolve_to_provider_id(search_tool, dest_raw)
@@ -238,7 +216,6 @@ def api_search():
     if not dest_id:
         dest_id = dest_raw
 
-    # ── Budget: optional ────────────────────────────────────────────────
     budget = None
     if budget_raw not in (None, "", "null"):
         try:
@@ -251,7 +228,6 @@ def api_search():
     budget_ceiling = budget if budget is not None else Decimal("9999999.00")
     mode = "live" if _has_live_credentials() else "offline"
 
-    # ── Run outbound search ─────────────────────────────────────────────
     try:
         outbound_req = SearchRequest(
             origin=origin_id,
@@ -270,7 +246,6 @@ def api_search():
     except Exception as exc:
         return jsonify({"ok": False, "errors": [f"Search failed: {exc}"]}), 500
 
-    # ── Run return search if requested ──────────────────────────────────
     return_report = None
     if return_date:
         try:
@@ -288,9 +263,8 @@ def api_search():
                 mode=mode,
             )
         except Exception:
-            return_report = None   # non-fatal; outbound results still returned
+            return_report = None   
 
-    # ── Annotate and sort offers ────────────────────────────────────────
     source_map = {
         "LIVE_GOOGLE_FLIGHTS": "Live — Google Flights via SerpApi",
         "LIVE_API":            "Live — Amadeus",

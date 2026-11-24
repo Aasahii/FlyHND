@@ -6,7 +6,6 @@ from typing import Optional, Dict, Any
 @dataclass
 class SearchRequest:
 
-    # IATA airport codes or Google Flights location IDs (kgmids).
     origin: str = "PNQ"
     destination: str = "SIN"
     departure_date: str = ""

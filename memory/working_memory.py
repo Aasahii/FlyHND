@@ -1,8 +1,3 @@
-"""
-FlyHND — Working Memory
-Per-request in-memory scratchpad for the agent pipeline.
-"""
-
 import uuid
 from datetime import datetime, timezone
 from typing import List, Dict, Optional, Any
@@ -14,7 +9,6 @@ from memory.tfidf_retriever import RetrievedEvidence
 
 
 class WorkingMemory:
-    """Per-request working memory container."""
 
     def __init__(self, correlation_id: Optional[str] = None):
         self.correlation_id = correlation_id or f"corr-{uuid.uuid4().hex[:8]}"

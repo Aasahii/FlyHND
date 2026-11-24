@@ -1,9 +1,3 @@
-"""
-FlyHND — Orchestrator
-Coordinates the search pipeline: policy retrieval → flight search → ranking.
-Email is fully removed. Results go directly to the web UI.
-"""
-
 import uuid
 from decimal import Decimal
 from typing import Optional, Dict, Any, List, Callable
@@ -39,29 +33,12 @@ class RequestCoordinator:
         search_request: SearchRequest,
         mode: str = "offline",
     ) -> Dict[str, Any]:
-        """
-        Run the full flight search pipeline and return results.
-
-        Parameters
-        ----------
-        search_request : SearchRequest
-        mode : str
-            "live"  — query live provider (SerpApi or Amadeus)
-            "offline" — use bundled demo data (PNQ→SIN only)
-            "simulate_failure" — demo the retry/cache-fallback path
-
-        Returns
-        -------
-        dict  with keys: correlation_id, request, mode, top_flights,
-              price_comparison, recovery_trace, conflict_arbitration,
-              filter_summary, messages, trace_logs
-        """
+    
 
         correlation_id = f"flyhnd-{uuid.uuid4().hex[:8]}"
         self.working_memory = WorkingMemory(correlation_id=correlation_id)
         self.working_memory.set_request(search_request)
 
-        # ── Step 1: Policy / memory retrieval ─────────────────────────────
         task_policy_id = f"task-policy-{uuid.uuid4().hex[:4]}"
         self.working_memory.register_task(
             task_id=task_policy_id,
@@ -90,7 +67,6 @@ class RequestCoordinator:
             summary=f"Retrieved {len(msg_policy_resp.evidence)} relevant records."
         )
 
-        # ── Step 2: Flight search ──────────────────────────────────────────
         task_search_id = f"task-search-{uuid.uuid4().hex[:4]}"
         self.working_memory.register_task(
             task_id=task_search_id,
@@ -126,7 +102,6 @@ class RequestCoordinator:
             summary=f"Obtained {len(raw_offers_data)} candidate offers (mode={mode})."
         )
 
-        # ── Step 3: Validation & ranking ──────────────────────────────────
         task_rank_id = f"task-rank-{uuid.uuid4().hex[:4]}"
         self.working_memory.register_task(
             task_id=task_rank_id,
@@ -163,7 +138,6 @@ class RequestCoordinator:
             )
         )
 
-        # ── Persist to long-term memory ────────────────────────────────────
         source_label = (
             "LIVE_API" if mode == "live"
             else "OFFLINE_CACHE" if mode == "simulate_failure"
