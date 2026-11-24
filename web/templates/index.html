@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlyHND — Global Flight Search</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<!-- Backdrop overlay for modal spotlight effect -->
+<div id="modalBackdrop" class="modal-backdrop" style="display:none;"></div>
+
+<!-- ───────────── HEADER ───────────── -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="brand">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FlyHND Logo" class="brand-logo-img" />
+    </div>
+    <div class="provider-pill {{ 'live' if live_configured else 'demo' }}">
+      {% if live_configured %}
+        <span class="dot"></span> Live &middot; {{ provider_label }}
+      {% else %}
+        <span class="dot"></span> Demo mode &mdash; add SERPAPI_KEY to .env
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ───────────── SEARCH CARD ───────────── -->
+  <section class="search-section">
+    <h1 class="search-title">Find flights anywhere in the world</h1>
+    <p class="search-sub">Enter cities, airports, or countries &mdash; we&rsquo;ll look them up.</p>
+
+    {% if not live_configured %}
+    <div class="banner banner-warn">
+      <strong>No live provider configured.</strong>
+      Add <code>SERPAPI_API_KEY</code> to <code>.env</code> and restart the server for real-time search.
+    </div>
+    {% endif %}
+
+    <form id="searchForm" class="search-card" novalidate>
+
+      <!-- Trip type toggle -->
+      <div class="trip-toggle">
+        <label class="radio-label">
+          <input type="radio" name="tripType" value="one_way" checked /> One way
+        </label>
+        <label class="radio-label">
+          <input type="radio" name="tripType" value="return" /> Return
+        </label>
+      </div>
+
+      <!-- Row 1: Inputs (From / Swap / To / Dates / Pax / Currency) -->
+      <div class="form-row">
+
+        <!-- From -->
+        <div class="field-group field-group--grow">
+          <label for="originInput">From</label>
+          <div class="autocomplete-wrapper">
+            <input id="originInput" type="text" class="field-input"
+              placeholder="City, airport or country&hellip;" autocomplete="off" required />
+            <input type="hidden" id="originId" />
+            <ul id="originSuggestions" class="suggestion-list" role="listbox" hidden></ul>
+          </div>
+        </div>
+
+        <!-- Swap -->
+        <button type="button" id="swapBtn" class="swap-btn" title="Swap" aria-label="Swap">&#8646;</button>
+
+        <!-- To -->
+        <div class="field-group field-group--grow">
+          <label for="destInput">To</label>
+          <div class="autocomplete-wrapper">
+            <input id="destInput" type="text" class="field-input"
+              placeholder="City, airport or country&hellip;" autocomplete="off" required />
+            <input type="hidden" id="destId" />
+            <ul id="destSuggestions" class="suggestion-list" role="listbox" hidden></ul>
+          </div>
+        </div>
+
+        <!-- Depart date -->
+        <div class="field-group">
+          <label for="dateInput">Depart</label>
+          <input id="dateInput" type="date" class="field-input" required />
+        </div>
+
+        <!-- Return date (shown only when return selected) -->
+        <div class="field-group" id="returnDateGroup" style="display:none">
+          <label for="returnDateInput">Return</label>
+          <input id="returnDateInput" type="date" class="field-input" />
+        </div>
+
+        <!-- Passengers -->
+        <div class="field-group field-group--narrow">
+          <label for="passengersInput">Pax</label>
+          <input id="passengersInput" type="number" class="field-input" min="1" max="9" value="1" />
+        </div>
+
+        <!-- Currency -->
+        <div class="field-group field-group--narrow">
+          <label for="currencyInput">Currency</label>
+          <select id="currencyInput" class="field-input">
+            <option value="INR" selected>INR</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="SGD">SGD</option>
+            <option value="JPY">JPY</option>
+            <option value="AUD">AUD</option>
+          </select>
+        </div>
+
+      </div><!-- /form-row -->
+
+      <!-- Action Row: Search button pushed to the right side -->
+      <div class="search-action-row">
+        <button type="submit" id="searchBtn" class="btn-primary search-btn-lg">
+          <span id="searchBtnText">Search Flights</span>
+          <span id="searchBtnSpinner" class="spinner" style="display:none;"></span>
+        </button>
+      </div>
+
+    </form>
+  </section>
+
+  <!-- ───────────── ERROR ───────────── -->
+  <div id="errorBanner" class="banner banner-error" hidden></div>
+
+  <!-- ───────────── RESULTS ───────────── -->
+  <section id="resultsSection" class="results-section" hidden>
+
+    <!-- Demo notice -->
+    <div id="demoBanner" class="banner banner-info" hidden></div>
+
+    <!-- Outbound results -->
+    <div id="outboundBlock">
+      <div class="results-header">
+        <div>
+          <h2 id="outboundTitle" class="results-title"></h2>
+          <p id="outboundSub" class="results-sub"></p>
+        </div>
+      </div>
+      <div id="tabBar" class="tab-bar">
+        <button class="tab-btn active" data-sort="price">Cheapest</button>
+        <button class="tab-btn" data-sort="duration">Fastest</button>
+        <button class="tab-btn" data-sort="best">Best Value</button>
+      </div>
+      <div id="flightList" class="flight-list"></div>
+      <div id="noResults" class="no-results" hidden>
+        <p>No flights found for this route.</p>
+      </div>
+    </div>
+
+    <!-- Return results (shown only for round trips) -->
+    <div id="returnBlock" hidden>
+      <div class="results-divider">
+        <span>Return Flight</span>
+      </div>
+      <div class="results-header">
+        <div>
+          <h2 id="returnTitle" class="results-title"></h2>
+          <p id="returnSub" class="results-sub"></p>
+        </div>
+      </div>
+      <div id="tabBarReturn" class="tab-bar">
+        <button class="tab-btn-r active" data-sort="price">Cheapest</button>
+        <button class="tab-btn-r" data-sort="duration">Fastest</button>
+        <button class="tab-btn-r" data-sort="best">Best Value</button>
+      </div>
+      <div id="returnFlightList" class="flight-list"></div>
+      <div id="noReturnResults" class="no-results" hidden>
+        <p>No return flights found.</p>
+      </div>
+    </div>
+
+  </section>
+
+</main>
+
+<!-- ───────────── FOOTER ───────────── -->
+<footer class="site-footer">
+  <p>FlyHND &middot; Global Flight Search &amp; Price Comparison &middot;
+  Fares from live providers where configured; demo data otherwise &middot;
+  Booking &amp; payment: planned for FlyHND 4.0</p>
+</footer>
+
+<!-- Card template -->
+<template id="flightCardTemplate">
+  <article class="flight-card">
+    <div class="card-badges"></div>
+    <div class="card-top">
+      <div class="card-airline">
+        <span class="airline-name"></span>
+        <span class="flight-number"></span>
+      </div>
+      <div class="card-price">
+        <span class="price-currency"></span><span class="price-amount"></span>
+        <span class="price-note"></span>
+      </div>
+    </div>
+    <div class="card-route">
+      <div class="route-point">
+        <span class="route-time dep-time"></span>
+        <span class="route-code dep-code"></span>
+      </div>
+      <div class="route-middle">
+        <span class="route-duration"></span>
+        <div class="route-line">
+          <span class="stop-dot-left"></span>
+          <div class="route-track"></div>
+          <span class="stop-dot-right"></span>
+        </div>
+        <span class="route-stops"></span>
+      </div>
+      <div class="route-point">
+        <span class="route-time arr-time"></span>
+        <span class="route-code arr-code"></span>
+      </div>
+    </div>
+    <div class="card-meta">
+      <span class="meta-cabin"></span>
+      <span class="meta-baggage"></span>
+      <span class="meta-source"></span>
+      <span class="expand-hint">Click for details &#9662;</span>
+    </div>
+
+    <!-- Collapsible Flight Itinerary & Layover Details -->
+    <div class="card-details" style="display:none;">
+      <div class="details-divider">Flight Itinerary &amp; Route Stops</div>
+      <div class="segments-container"></div>
+    </div>
+  </article>
+</template>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
