@@ -1,10 +1,6 @@
-/* =====================================================================
-   FlyHND — Client JS
-   ===================================================================== */
 (function () {
   "use strict";
 
-  // ── DOM refs ──────────────────────────────────────────────────────────
   const form             = document.getElementById("searchForm");
   const originInput      = document.getElementById("originInput");
   const originId         = document.getElementById("originId");
@@ -26,14 +22,12 @@
   const demoBanner       = document.getElementById("demoBanner");
   const errorBanner      = document.getElementById("errorBanner");
 
-  // Outbound refs
   const outboundTitle    = document.getElementById("outboundTitle");
   const outboundSub      = document.getElementById("outboundSub");
   const flightList       = document.getElementById("flightList");
   const noResults        = document.getElementById("noResults");
   const tabBtns          = document.querySelectorAll(".tab-btn");
 
-  // Return refs
   const returnBlock      = document.getElementById("returnBlock");
   const returnTitle      = document.getElementById("returnTitle");
   const returnSub        = document.getElementById("returnSub");
@@ -44,7 +38,6 @@
   const cardTemplate     = document.getElementById("flightCardTemplate");
   const modalBackdrop    = document.getElementById("modalBackdrop");
 
-  // Track currently expanded card
   let activeCard = null;
 
   function closeActiveSpotlight() {
@@ -65,25 +58,21 @@
     });
   }
 
-  // Also allow Escape key to close
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && activeCard) {
       closeActiveSpotlight();
     }
   });
 
-  // ── State ─────────────────────────────────────────────────────────────
   let outboundOffers = [];
   let returnOffers   = [];
   let currentSort    = "price";
   let currentSortR   = "price";
 
-  // ── Date min ──────────────────────────────────────────────────────────
   const today = new Date().toISOString().slice(0, 10);
   dateInput.setAttribute("min", today);
   returnDateInput.setAttribute("min", today);
 
-  // ── Trip type toggle ──────────────────────────────────────────────────
   document.querySelectorAll("input[name='tripType']").forEach(radio => {
     radio.addEventListener("change", () => {
       const isReturn = radio.value === "return" && radio.checked;
@@ -102,7 +91,6 @@
     return r && r.value === "return";
   }
 
-  // ── Autocomplete ──────────────────────────────────────────────────────
   function buildAutocomplete(textInput, hiddenInput, listEl) {
     let debounceTimer = null;
 
@@ -183,18 +171,15 @@
   buildAutocomplete(originInput, originId, originSugg);
   buildAutocomplete(destInput,   destId,   destSugg);
 
-  // ── Swap ──────────────────────────────────────────────────────────────
   swapBtn.addEventListener("click", () => {
     [originInput.value, destInput.value] = [destInput.value, originInput.value];
     [originId.value,    destId.value]    = [destId.value,    originId.value];
   });
 
-  // ── Form submit ───────────────────────────────────────────────────────
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     clearError();
 
-    // Fall back to typed text if user didn't pick from dropdown
     if (!originId.value && originInput.value.trim()) originId.value = originInput.value.trim();
     if (!destId.value   && destInput.value.trim())   destId.value   = destInput.value.trim();
 
@@ -236,9 +221,7 @@
     }
   });
 
-  // ── Results rendering ─────────────────────────────────────────────────
   function renderResults(data, payload) {
-    // ── Outbound ──
     outboundOffers = data.outbound?.offers || [];
     currentSort = "price";
     tabBtns.forEach(b => b.classList.toggle("active", b.dataset.sort === "price"));
@@ -251,7 +234,6 @@
     outboundTitle.textContent = `${outTotal} flight${outTotal !== 1 ? "s" : ""} \u2014 ${data.outbound?.route || ""}`;
     outboundSub.textContent   = `${payload.date} \u00b7 ${paxStr} \u00b7 ${cur}`;
 
-    // Demo notice
     if (data.is_demo && data.demo_note) {
       demoBanner.textContent = data.demo_note;
       demoBanner.hidden = false;
@@ -261,7 +243,6 @@
 
     renderCards(outboundOffers, currentSort, flightList, noResults);
 
-    // ── Return ──
     if (data.return && payload.return_date) {
       returnOffers = data.return?.offers || [];
       currentSortR = "price";
@@ -308,7 +289,6 @@
     const frag = cardTemplate.content.cloneNode(true);
     const card = frag.querySelector(".flight-card");
 
-    // Badges
     const badgesEl = card.querySelector(".card-badges");
     const badgeMap = {
       cheapest:   ["Cheapest",   "badge-cheapest"],
@@ -333,7 +313,6 @@
     card.querySelector(".airline-name").textContent  = offer.airline || "Airline";
     card.querySelector(".flight-number").textContent = offer.flight_number || "";
 
-    // Price
     const fare = numFare(offer);
     card.querySelector(".price-currency").textContent = offer.currency || "";
     card.querySelector(".price-amount").textContent   = fmt(fare);
@@ -342,7 +321,6 @@
       ? `Base ${fmt(parseFloat(offer.base_fare || 0))} + Tax ${fmt(parseFloat(offer.tax_fees || 0))}`
       : "Total fare";
 
-    // Times
     card.querySelector(".dep-time").textContent = fmtTime(offer.departure_time);
     card.querySelector(".dep-code").textContent = offer.origin || "";
     card.querySelector(".arr-time").textContent = fmtTime(offer.arrival_time);
@@ -358,7 +336,6 @@
     card.querySelector(".meta-baggage").textContent = offer.baggage || "";
     card.querySelector(".meta-source").textContent  = offer.source_label || src;
 
-    // ── Build Segment / Stop details ─────────────────────────────────────
     const detailsEl = card.querySelector(".card-details");
     const segContainer = card.querySelector(".segments-container");
     const expandHint = card.querySelector(".expand-hint");
@@ -396,7 +373,6 @@
         `;
         segContainer.appendChild(segBox);
 
-        // Layover if any
         if (seg.layover_after) {
           const lo = seg.layover_after;
           const loDiv = document.createElement("div");
@@ -408,7 +384,6 @@
         }
       });
     } else {
-      // Fallback if provider didn't return segments array
       const segBox = document.createElement("div");
       segBox.className = "segment-box";
       const stopsTxt = stops === 0 ? "Non-stop direct flight" : `${stops} stop(s) via ${offer.layovers?.join(", ") || "connecting airport"}`;
@@ -432,16 +407,13 @@
       segContainer.appendChild(segBox);
     }
 
-    // Toggle on click with blur spotlight effect
     card.addEventListener("click", (evt) => {
-      // Don't toggle if clicking links or interactive elements
       if (evt.target.closest("a, button, input")) return;
       const isOpen = detailsEl.style.display !== "none";
 
       if (isOpen) {
         closeActiveSpotlight();
       } else {
-        // If another card is already open, close it first
         if (activeCard && activeCard !== card) {
           closeActiveSpotlight();
         }
@@ -453,7 +425,6 @@
         document.body.classList.add("has-active-modal");
         if (modalBackdrop) modalBackdrop.style.display = "block";
 
-        // Scroll slightly if needed to ensure entire expanded card is in view
         card.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
     });
@@ -461,7 +432,6 @@
     return frag;
   }
 
-  // ── Tab sort ──────────────────────────────────────────────────────────
   tabBtns.forEach(btn => {
     btn.addEventListener("click", () => {
       currentSort = btn.dataset.sort;
@@ -479,7 +449,6 @@
     });
   });
 
-  // ── Helpers ───────────────────────────────────────────────────────────
   function showError(msg) { errorBanner.textContent = msg; errorBanner.hidden = false; errorBanner.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
   function clearError()   { errorBanner.textContent = ""; errorBanner.hidden = true; }
   function setLoading(on) {
